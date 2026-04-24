@@ -1,0 +1,47 @@
+# Environment variables and secrets
+.env
+.env.*
+*.env
+!.env.example
+!*.env.example
+
+# Credentials and keys
+*.key
+*.pem
+credentials.json
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Backups
+*.bak
+*.backup
+
+# graphify cache grows over time, commit only the final outputs if at all
+graphify-out/cache/

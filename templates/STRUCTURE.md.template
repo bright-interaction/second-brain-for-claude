@@ -1,0 +1,42 @@
+# Repository Structure
+
+Quick reference for navigating {{PROJECT_NAME}}. Update whenever adding or removing a top-level directory.
+
+## Source
+
+TODO: fill in your top-level directories here, e.g.:
+
+- `cmd/` - entry points
+- `internal/` - private packages
+- `frontend/` - UI code
+- `api/` - public API handlers
+
+## Ops
+
+- `ops/` (or wherever you keep it) - master `.env`, deploy scripts, health checks
+
+## Archive
+
+- `_archive/` - retired projects. See `_archive/README.md` for inventory.
+
+## Generated
+
+- `graphify-out/` - knowledge graph output (auto-rebuilt by git hook)
+
+## Wiki
+
+- `{{WIKI_PATH}}` - the {{WIKI_NAME}}. Separate git repo.
+
+---
+
+## .env locations
+
+TODO: list every `.env` file path so both you and Claude can find them instantly.
+
+## Naming rules
+
+- Top-level directory names use kebab-case
+- Never nest projects: no `foo/foo/` patterns
+- New services without source go as `<service-name>/` with a `docker-compose.yml`
+- New applications go as `<project-name>/` with their own build files
+- Dead projects move to `_archive/` with a note in `_archive/README.md`

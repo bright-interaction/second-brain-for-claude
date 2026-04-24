@@ -1,0 +1,62 @@
+# {{PROJECT_NAME}}
+
+{{PROJECT_DESCRIPTION}}
+
+## 1. Read {{WIKI_NAME}} FIRST (mandatory, every conversation)
+
+Before answering any question about this repo or {{PROJECT_NAME}}:
+
+1. Read `{{WIKI_PATH}}/index.md`
+2. Read the relevant entity/concept page(s) it points to
+3. Only then touch source files
+
+Do not re-explore source files when {{WIKI_NAME}} already has the context. Do not skip this step.
+
+## 2. Query graphify (mandatory, before searching)
+
+This project has a graphify knowledge graph at `graphify-out/`.
+
+- Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md`
+- Query the graph with:
+  ```
+  DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib ~/.local/bin/graphify query "<question>"
+  ```
+  before grepping raw code.
+- Rebuild happens automatically via `post-commit` git hook. Verify with `graphify hook status`.
+
+## 3. After every push, update {{WIKI_NAME}} (3 steps, no exceptions)
+
+1. Edit the relevant `{{WIKI_PATH}}/entities/<thing>.md` + append to `{{WIKI_PATH}}/log.md`
+2. Commit the {{WIKI_NAME}} repo:
+   ```
+   cd {{WIKI_PATH}} && git add -A && git commit -m "sync: <summary>"
+   ```
+3. Rebuild graphify:
+   ```
+   DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib ~/.local/bin/graphify query "rebuild"
+   ```
+
+Do not ask. Do not stop after step 1. All three steps, every time.
+
+## 4. Work order
+
+```
+graphify -> {{WIKI_NAME}} -> source -> execute -> commit -> push -> edit {{WIKI_NAME}} -> commit {{WIKI_NAME}} -> rebuild graphify
+```
+
+## 5. Project structure
+
+TODO: the setup script read your repo at setup time and wrote a starter structure map here. Review and edit as needed.
+
+## 6. Development standards
+
+TODO: fill in your conventions (language-specific rules, testing, CI, deployment). See `docs/wiki-philosophy.md` for how to keep this updated.
+
+## 7. Style (immutable)
+
+These rules do not bend:
+
+- Code style: match existing patterns before inventing new ones
+- Commits: conventional commit messages (feat, fix, docs, refactor, chore)
+- No hardcoded secrets. Use environment variables. All real values go in one place (typically `ops/.env` or equivalent).
+- Update {{WIKI_NAME}} after every non-trivial change. See step 3.
