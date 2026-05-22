@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Claude Code Stop hook: warn loudly when the session ended with WIP
+# in {{PROJECT_PATH}}. Catches the "I forgot to commit / forgot to push"
+# failure mode that UserPromptSubmit and PostToolUse hooks cannot see
+# (those only fire on prompts and after a push, not on session end).
+#
+# This hook only nudges; it never blocks. Exit code is always 0.
+
+REPO="{{PROJECT_PATH}}"
+LABEL="{{REPO_NAME}}"
+
+if [ ! -d "$REPO/.git" ]; then
+  exit 0
+fi
+
+cd "$REPO" || exit 0
+
+UNCOMMITTED="$(git status --porcelain 2>/dev/null | head -20)"
+UNPUSHED="$(git log --oneline @{u}..HEAD 2>/dev/null | head -10)"
+
+if [ -z "$UNCOMMITTED" ] && [ -z "$UNPUSHED" ]; then
+  exit 0
+fi
+
+{
+  echo ""
+  echo "[claude-stop-check] WIP in $LABEL/ - session ending without a clean tree:"
+  if [ -n "$UNCOMMITTED" ]; then
+    echo ""
+    echo "  Uncommitted:"
+    echo "$UNCOMMITTED" | sed 's/^/    /'
+  fi
+  if [ -n "$UNPUSHED" ]; then
+    echo ""
+    echo "  Unpushed commits:"
+    echo "$UNPUSHED" | sed 's/^/    /'
+  fi
+  echo ""
+} >&2
+
+exit 0

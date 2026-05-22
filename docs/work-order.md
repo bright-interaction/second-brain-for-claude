@@ -26,6 +26,15 @@ The hard-coded sequence Claude follows on every task.
 - **Work order**: standard.
 - **Write order**: the wiki is downstream of code and upstream of Claude's next conversation. Skipping step 7 or 8 means the next conversation starts stale.
 
+## Boil the ocean (the standard)
+
+Before any task moves from step 4 (execute) to step 5 (commit), it has to pass the completeness gate:
+
+- Build, render, production-shaped data round-trip, headers, error legibility.
+- Tenant-facing check: can a non-developer reach the demoable state through the UI alone? If no, the feature is not shipped.
+
+No "I'll fix the rest later." See `docs/boil-the-ocean.md` for the canonical text and failure modes.
+
 ## Violations to catch
 
 Claude will sometimes:

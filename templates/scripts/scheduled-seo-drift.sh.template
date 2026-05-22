@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Weekly headless-Claude SEO drift check. EXAMPLE template - you must edit
+# the PROMPT block to match your site.
+#
+# Reference example (Bright Interaction): runs the `seo-audit` skill on
+# brightinteraction.com with a 50-page cap, diffs against a JSON snapshot,
+# and appends regressions to the wiki log.
+#
+# To adapt for your project:
+#   1. Replace the URL and crawl limit.
+#   2. Change the skill name if you use a different SEO toolchain.
+#   3. Decide which deltas matter (health-score drop, broken-link count,
+#      Core Web Vitals regression) and edit the diff rules.
+#
+# Cost note: headless Claude runs cost real tokens. The recommended cadence
+# is weekly, not daily. See docs/scheduled-jobs.md "Cost note".
+set -uo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+WORKDIR="{{PROJECT_PATH}}"
+WIKI="{{WIKI_PATH}}"
+CLAUDE_BIN="/opt/homebrew/bin/claude"
+[ ! -x "$CLAUDE_BIN" ] && CLAUDE_BIN="$(command -v claude)"
+LOG="$HOME/Library/Logs/seo-drift.log"
+[ "$(uname)" = "Linux" ] && LOG="$HOME/.local/share/seo-drift.log"
+SNAPSHOT="$WORKDIR/ops/last-seo-snapshot.json"
+
+# Edit this for your site.
+TARGET_URL="https://example.com"
+CRAWL_LIMIT=50
+
+mkdir -p "$(dirname "$LOG")"
+echo "===== $(date -Iseconds) seo-drift run =====" >> "$LOG"
+
+cd "$WORKDIR"
+
+# === EDIT THIS PROMPT FOR YOUR STACK ===
+PROMPT='Weekly SEO drift check on '"$TARGET_URL"' (scheduled headless run, no human in the loop).
+
+Steps:
+
+1. Run an SEO audit on '"$TARGET_URL"' with crawl_limit='"$CRAWL_LIMIT"' (homepage + top N pages - this is a drift check, not a full audit). Use whichever SEO skill you have installed; if none, use a curl + heuristic check on title/meta/canonical/H1 across the homepage.
+2. Capture: overall health score, Core Web Vitals snapshot, broken links count, new errors.
+3. Read previous snapshot at '"$SNAPSHOT"'. If missing, treat current as baseline and skip step 4.
+4. Diff: did the health score drop by >=5 points, did broken-link count rise, did any new errors appear, did Core Web Vitals regress?
+5. If yes: append a one-line dated entry to '"$WIKI"'/log.md naming the regression(s). In the wiki vault: cd '"$WIKI"' && git add -A && git -c gpg.gpgsign=false commit -m "sync: weekly SEO drift ($(date +%Y-%m-%d))"
+6. Whether or not regressed, overwrite '"$SNAPSHOT"' with the current state.
+7. Print a one-line summary like "seo: score 88->85, 2 new broken links" or "seo: stable".
+
+Hard rules:
+- Do NOT push the wiki commit.
+- Do NOT modify any source files in the project.
+- If '"$TARGET_URL"' is unreachable, print "seo: site unreachable" and exit 0.
+
+Begin.'
+
+"$CLAUDE_BIN" -p "$PROMPT" --output-format text >> "$LOG" 2>&1
+EXIT_CODE=$?
+echo "  claude exit: $EXIT_CODE" >> "$LOG"
+
+exit 0

@@ -147,11 +147,60 @@ Tell them:
 >
 > First thing to try: open a new Claude Code session in `{{PROJECT_PATH}}` and ask "what is this project?". Claude should answer from the wiki entity page you just created, not by re-reading source.
 
+## Step 10: Offer optional add-ons
+
+Once the base install passes verify, walk the user through the add-ons. Ask one block at a time. Each block is independent - skipping does not break anything else.
+
+### a) Stop hook (recommended)
+
+Ask: "Install the Stop hook? It warns at session end if you have uncommitted or unpushed work."
+
+If yes:
+1. Substitute `{{PROJECT_PATH}}` and `{{REPO_NAME}}` (a short display label, e.g. the project name) in `templates/scripts/claude-stop-check.sh.template`. Write to `{{PROJECT_PATH}}/ops/scripts/claude-stop-check.sh`. `chmod +x` it.
+2. Merge the `"Stop"` hook block from `templates/settings.json.template` into `{{PROJECT_PATH}}/.claude/settings.json`. The block lives at the bottom of the hooks object in the template - copy it verbatim (after substitution).
+3. Test: edit a file in the project, do not commit, end the Claude session. You should see a stderr warning naming the uncommitted change.
+
+### b) `/adr` slash command
+
+Ask: "Install the /adr slash command? It captures architectural decisions into the wiki."
+
+If yes:
+1. Substitute `{{WIKI_PATH}}` in `templates/commands/adr.md.template`. Write to `{{PROJECT_PATH}}/.claude/commands/adr.md`.
+2. Substitute `{{TODAY}}` in `wiki-templates/maps/architectural-decisions.md`. Write to `{{WIKI_PATH}}/maps/architectural-decisions.md`. Commit the wiki.
+3. Add this line to `{{WIKI_PATH}}/index.md` under the Maps section: `- [[architectural-decisions]] - ADR-style decision log (use /adr to append)`.
+4. Test: invoke `/adr "test decision"` in a Claude session. Confirm a new ADR section appears in `architectural-decisions.md` + a log line in `log.md`.
+
+### c) Scheduled jobs
+
+Ask: "Install scheduled background jobs? Pick any subset."
+
+Offer the five jobs from `docs/scheduled-jobs.md`. For each one the user opts into:
+
+1. Substitute placeholders in the template at `templates/scripts/scheduled-<name>.sh.template` (or `scheduled-claude-spend.py` for the Python one - no placeholders, ship as-is). Write to `{{PROJECT_PATH}}/ops/scripts/scheduled-<name>.sh`. `chmod +x`.
+2. For `cert-expiry`: prompt the user for their DOMAINS list, fill it into the script.
+3. For `test-gaps`: confirm the project is Go-based. Skip if not.
+4. For `security-audit` and `seo-drift`: tell the user the PROMPT block is a placeholder - they need to edit it before the job is useful. Walk them through what to put there based on what tools they have installed.
+
+**macOS (launchd):**
+- Substitute placeholders in `templates/launchd/<name>.plist.template` (`{{PROJECT_PATH}}`, `{{LABEL_PREFIX}}`, `{{HOME}}`). Write to `~/Library/LaunchAgents/<label-prefix>.<name>.plist`.
+- `launchctl load ~/Library/LaunchAgents/<label-prefix>.<name>.plist`
+- Verify with `launchctl list | grep <label-prefix>`.
+
+**Linux (cron):**
+- Substitute `{{PROJECT_PATH}}` in `templates/cron/scheduled-jobs.crontab.template`. Print the matching lines for the user to paste with `crontab -e`. Do not edit their crontab automatically.
+
+Test each one by triggering manually:
+- macOS: `launchctl start <label-prefix>.<name>`
+- Linux: run the script directly.
+
+Confirm the expected output file appears (cert-expiry log entry, test-gaps report, claude-spend report).
+
 ## Done criteria
 
 Do not report "done" until:
 - Verify script passes all checks
 - User has run one test query and confirmed it uses the wiki + graph, not raw grep
 - The wiki has at least one committed entity page
+- For every add-on the user opted into, the test described above succeeded
 
 If any step fails, stop and debug with the user. Do not paper over errors.

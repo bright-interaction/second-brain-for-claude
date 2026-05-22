@@ -2,13 +2,13 @@
 
 *Read this first.* Every page in the wiki is listed here with a one-line summary. See [`CLAUDE.md`](CLAUDE.md) for the operating model and [`README.md`](README.md) for the human entry point.
 
-**Counts:** 1 entity · 0 concepts · 0 maps · 1 total
+**Counts:** 1 entity · 0 concepts · 1 map · 2 total
 
 ---
 
 ## Maps, synthesis pages
 
-*(none yet. Create in `maps/` as you build out. See `docs/wiki-philosophy.md` in the starter repo for templates.)*
+- [[architectural-decisions]] - ADR-style decision log (append with `/adr` if the slash command is installed)
 
 ## Entities
 

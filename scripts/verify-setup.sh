@@ -61,6 +61,40 @@ else
 fi
 
 echo
+echo "==> Optional add-ons (only checked if files are present)"
+
+# Stop hook
+STOP_SH="$PROJECT_PATH/ops/scripts/claude-stop-check.sh"
+if [ -f "$STOP_SH" ]; then
+  check "stop-hook script is executable" "[ -x '$STOP_SH' ]"
+  if [ -f "$PROJECT_PATH/.claude/settings.json" ] && command -v python3 >/dev/null 2>&1; then
+    check "settings.json wires the Stop hook" \
+      "python3 -c 'import json,sys; d=json.load(open(\"$PROJECT_PATH/.claude/settings.json\")); sys.exit(0 if \"Stop\" in d.get(\"hooks\",{}) else 1)'"
+  fi
+else
+  echo "  SKIP: Stop hook not installed (optional)"
+fi
+
+# /adr slash command
+ADR_CMD="$PROJECT_PATH/.claude/commands/adr.md"
+if [ -f "$ADR_CMD" ]; then
+  check "/adr command file exists" "[ -f '$ADR_CMD' ]"
+  check "wiki has architectural-decisions map" "[ -f '$WIKI_PATH/maps/architectural-decisions.md' ]"
+else
+  echo "  SKIP: /adr command not installed (optional)"
+fi
+
+# Scheduled jobs (presence only; we don't verify launchd / cron registration here)
+for job in cert-expiry test-gaps claude-spend security-audit seo-drift; do
+  ext="sh"
+  [ "$job" = "claude-spend" ] && ext="py"
+  script="$PROJECT_PATH/ops/scripts/scheduled-$job.$ext"
+  if [ -f "$script" ]; then
+    check "scheduled-$job script present" "[ -x '$script' ] || [ '$ext' = 'py' ]"
+  fi
+done
+
+echo
 if [ "$FAIL" -eq 0 ]; then
   echo "==> All checks passed. Second Brain is ready."
   echo "    Open Claude Code in $PROJECT_PATH and try: \"what is this project?\""

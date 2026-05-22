@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Nightly Go test-coverage sweep across {{PROJECT_PATH}}.
+# Pure bash + `go test`, no Claude headless. Writes a markdown report
+# at {{PROJECT_PATH}}/ops/test-gaps.md listing packages under THRESHOLD%.
+# Trigger via launchd (macOS) or cron (Linux). See docs/scheduled-jobs.md.
+#
+# Go-specific. Skip this job if your project does not use Go.
+set -uo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+REPO="{{PROJECT_PATH}}"
+REPORT="$REPO/ops/test-gaps.md"
+LOG="$HOME/Library/Logs/test-gaps.log"
+[ "$(uname)" = "Linux" ] && LOG="$HOME/.local/share/test-gaps.log"
+THRESHOLD=50
+
+mkdir -p "$(dirname "$LOG")" "$(dirname "$REPORT")"
+echo "===== $(date -Iseconds) test-gaps sweep =====" >> "$LOG"
+
+GO_PROJECTS=$(find "$REPO" -maxdepth 2 -name go.mod -not -path "*/node_modules/*" -not -path "*/_archive/*" 2>/dev/null \
+  | xargs -I{} dirname {})
+
+{
+  echo "# Test coverage gaps"
+  echo ""
+  echo "_Generated $(date -Iseconds)_"
+  echo ""
+  echo "Packages below ${THRESHOLD}% coverage. Sorted worst-first per project."
+  echo ""
+} > "$REPORT"
+
+for proj in $GO_PROJECTS; do
+  name=$(basename "$proj")
+  echo "  scanning $name..." >> "$LOG"
+  cd "$proj" || continue
+  COVER_OUT=$(go test -cover ./... 2>&1 | grep -E "^(ok|---)" || true)
+  GAPS=$(echo "$COVER_OUT" | awk -v t="$THRESHOLD" '
+    /coverage:/ {
+      for (i=1; i<=NF; i++) if ($i ~ /%$/) { gsub("%","",$i); pct=$i+0 }
+      if (pct < t) print pct"\t"$2
+    }
+  ' | sort -n | head -10)
+  if [ -n "$GAPS" ]; then
+    {
+      echo "## $name"
+      echo ""
+      echo "\`\`\`"
+      echo "pct  pkg"
+      echo "$GAPS"
+      echo "\`\`\`"
+      echo ""
+    } >> "$REPORT"
+  fi
+done
+
+echo "  report: $REPORT" >> "$LOG"
+exit 0

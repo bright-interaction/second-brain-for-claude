@@ -60,3 +60,28 @@ These rules do not bend:
 - Commits: conventional commit messages (feat, fix, docs, refactor, chore)
 - No hardcoded secrets. Use environment variables. All real values go in one place (typically `ops/.env` or equivalent).
 - Update {{WIKI_NAME}} after every non-trivial change. See step 3.
+
+## 8. Boil the ocean (the standard)
+
+The marginal cost of completeness with AI is near zero. Do the whole thing. Never table it for later when the solve is within reach. Never leave a dangling thread.
+
+Before claiming any task done, verify every angle:
+
+- Does it build? Does it render? Does it work in production, not just locally?
+- Does data round-trip correctly through whatever serialization it touches?
+- Are headers right? Is rate-limiting sane? Does the error message make sense to a human?
+- **Tenant-facing check (mandatory).** Can a non-developer reach the demoable state through the UI alone, no docs-diving, no API calls, no asking? If no, the feature is not shipped. Add the operator surface and re-run the gates.
+
+If any of those fail, fix them before responding. Do not ship a fix and say "try it now" until you have confirmed it works end-to-end yourself.
+
+See `docs/boil-the-ocean.md` in the starter repo for the full text and the canonical examples.
+
+## 9. Optional add-ons
+
+If you opted in during setup (Step 10 in `SETUP.md`), this project also has:
+
+- **Stop hook** at `ops/scripts/claude-stop-check.sh` - warns at session end if there is uncommitted or unpushed work. See `docs/hooks-explained.md` for what it catches.
+- **`/adr` slash command** at `.claude/commands/adr.md` - appends an architectural decision to `{{WIKI_PATH}}/maps/architectural-decisions.md`. Use it whenever you make a decision worth remembering ("we picked X over Y because Z").
+- **Scheduled jobs** in `ops/scripts/` driven by macOS launchd or Linux cron - daily TLS cert sweep, nightly Go test-coverage report, daily Claude-spend rollup, optional weekly headless audits. See `docs/scheduled-jobs.md`.
+
+None of these are required. They are independent and removable.

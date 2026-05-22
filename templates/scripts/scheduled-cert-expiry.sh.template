@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Daily TLS cert expiry sweep across your domains.
+# Pure bash + openssl, no Claude headless. Notifies if any cert expires in
+# under THRESHOLD_DAYS. Trigger via launchd (macOS) or cron (Linux).
+# See docs/scheduled-jobs.md for setup.
+set -uo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# Fill in your domains. Each one is checked for `s_client -servername <d> -connect <d>:443`.
+DOMAINS=(
+  # example.com
+  # www.example.com
+  # api.example.com
+)
+
+THRESHOLD_DAYS=14
+LOG="$HOME/Library/Logs/cert-expiry.log"
+[ "$(uname)" = "Linux" ] && LOG="$HOME/.local/share/cert-expiry.log"
+NOW_EPOCH=$(date +%s)
+WARNINGS=()
+
+mkdir -p "$(dirname "$LOG")"
+echo "===== $(date -Iseconds) cert-expiry sweep =====" >> "$LOG"
+
+if [ ${#DOMAINS[@]} -eq 0 ]; then
+  echo "  no domains configured; edit DOMAINS array in this script" >> "$LOG"
+  exit 0
+fi
+
+for d in "${DOMAINS[@]}"; do
+  EXPIRY=$(echo | openssl s_client -servername "$d" -connect "$d:443" -showcerts 2>/dev/null \
+    | openssl x509 -noout -enddate 2>/dev/null | sed 's/notAfter=//')
+  if [ -z "$EXPIRY" ]; then
+    echo "  $d: unreachable" >> "$LOG"
+    continue
+  fi
+  EXPIRY_EPOCH=$(date -j -f "%b %d %T %Y %Z" "$EXPIRY" +%s 2>/dev/null \
+    || date -d "$EXPIRY" +%s 2>/dev/null)
+  if [ -z "$EXPIRY_EPOCH" ]; then
+    echo "  $d: could not parse '$EXPIRY'" >> "$LOG"
+    continue
+  fi
+  DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+  echo "  $d: $DAYS_LEFT days ($EXPIRY)" >> "$LOG"
+  if [ "$DAYS_LEFT" -lt "$THRESHOLD_DAYS" ]; then
+    WARNINGS+=("$d: $DAYS_LEFT days left")
+  fi
+done
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
+  MSG="TLS cert expiry warning:\n$(printf '  %s\n' "${WARNINGS[@]}")"
+  echo -e "$MSG" >> "$LOG"
+  if [ "$(uname)" = "Darwin" ]; then
+    osascript -e "display notification \"$(printf '%s; ' "${WARNINGS[@]}")\" with title \"Cert expiry warning\"" 2>/dev/null || true
+  else
+    # Linux: prefer notify-send when in a graphical session; otherwise fall back to logger.
+    if command -v notify-send >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+      notify-send "Cert expiry warning" "$(printf '%s; ' "${WARNINGS[@]}")" 2>/dev/null || true
+    elif command -v logger >/dev/null 2>&1; then
+      logger -t cert-expiry "$(printf '%s; ' "${WARNINGS[@]}")"
+    fi
+  fi
+fi
+
+exit 0

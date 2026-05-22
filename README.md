@@ -26,9 +26,15 @@ Expect 5 to 10 minutes for the first-time setup, most of which is graphify build
 
 - **A wiki** (you name it, default suggestion is your project name + "-brain") with `entities/`, `concepts/`, `maps/` pages Karpathy-style
 - **graphify** ([open source](https://github.com/graphifyy/graphify) knowledge graph over your code)
-- **Hooks** that remind Claude of the work order on every prompt, tool call, and git push
+- **Hooks** that remind Claude of the work order on every prompt, tool call, and git push, plus the **Boil the Ocean** standard so partial fixes don't ship
 - **A `CLAUDE.md`** in your repo that documents the workflow for future sessions (and future teammates)
 - **Guardrails** against directory drift and credential leaks (optional, can skip)
+
+### Optional add-ons (opt-in during setup)
+
+- **Stop hook** - warns at session end if you have uncommitted or unpushed work (catches the "I forgot to commit" failure mode)
+- **`/adr` slash command** - capture architectural decisions into your wiki with one command
+- **Scheduled jobs** - daily TLS cert sweep, nightly Go test-coverage report, daily Claude-spend rollup, weekly security + SEO drift checks. macOS launchd + Linux cron both supported. See [`docs/scheduled-jobs.md`](docs/scheduled-jobs.md).
 
 ## Why
 

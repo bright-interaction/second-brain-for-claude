@@ -116,6 +116,14 @@ Reverse proxy
 Optional timeline so you remember when things moved.
 ```
 
+### Architectural Decisions (a special map)
+
+`maps/architectural-decisions.md` is the canonical place for ADR-style entries: choices that shape the project, written down so future-you (and Claude) don't have to reverse-engineer them.
+
+Each entry: Decision, Why, Trade-off, Status. Reverse chronological, newest at top. ADR numbers are sequential and never reused - even for reverted decisions.
+
+The starter repo ships an empty `architectural-decisions.md` and an optional `/adr` slash command that handles the formatting, numbering, and the wiki commit. See `SETUP.md` step 10b.
+
 ## Writing style
 
 - **Dense.** Not pedagogical. You and Claude are the audience, not a new hire.

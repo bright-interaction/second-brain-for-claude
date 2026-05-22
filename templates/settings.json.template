@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat <<'HOOKEOF'\n{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"ENFORCED RULES:\\n\\n1. GRAPHIFY FIRST: Query the knowledge graph (DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib ~/.local/bin/graphify query) before reading source files or grepping. Fast index, low token cost.\\n\\n2. {{WIKI_NAME_UPPER}} SECOND: Read {{WIKI_PATH}}/index.md and the relevant entity page for deeper context when graphify is not enough.\\n\\n3. WORK ORDER: Graphify -> {{WIKI_NAME}} -> Source -> Execute -> Commit -> Push -> Edit {{WIKI_NAME}} -> Commit {{WIKI_NAME}} -> Rebuild graphify. No exceptions.\\n\\n4. NEVER claim done until you have updated {{WIKI_NAME}} and rebuilt graphify.\"}}\nHOOKEOF"
+            "command": "cat <<'HOOKEOF'\n{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"ENFORCED RULES (no interpretation, execute exactly):\\n\\n1. GRAPHIFY FIRST: Query the knowledge graph (DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib ~/.local/bin/graphify query) before reading source files or grepping. Fast index, low token cost.\\n\\n2. {{WIKI_NAME_UPPER}} SECOND: Read {{WIKI_PATH}}/index.md and the relevant entity page for deeper context when graphify is not enough.\\n\\n3. BOIL THE OCEAN: Do the whole thing. Do it right. Never table it for later when the solve is within reach. Never leave a dangling thread. Before claiming done, verify every angle: build, render, production, data round-trip, headers, error messages. AND: can a non-developer reach the demoable state through the UI alone, no docs-diving, no API calls? If no, the feature is not shipped. Fix before responding.\\n\\n4. WORK ORDER: Graphify -> {{WIKI_NAME}} -> Source -> Execute -> Commit -> Push -> Edit {{WIKI_NAME}} -> Commit {{WIKI_NAME}} -> Rebuild graphify. No exceptions.\\n\\n5. NEVER claim done until you have updated {{WIKI_NAME}} and rebuilt graphify.\"}}\nHOOKEOF"
           }
         ]
       }
@@ -66,6 +66,18 @@
             "if": "Bash(git push*)",
             "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"POST-PUSH: Update {{WIKI_NAME}} now (3 steps, no exceptions):\\n1) Edit {{WIKI_PATH}}/entities/<project>.md + append to log.md\\n2) Commit {{WIKI_NAME}}: cd {{WIKI_PATH}} && git add -A && git commit -m sync:\\n3) Rebuild graphify: DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib ~/.local/bin/graphify query rebuild\\nDo NOT ask. Do NOT skip step 2.\"}}'",
             "timeout": 3
+          }
+        ]
+      }
+    ],
+    "_Stop_comment": "Add-on. Installed by SETUP.md step 10 if you opt in. Warns when the session ends with uncommitted or unpushed changes in {{PROJECT_PATH}}. Never blocks (script always exits 0).",
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{PROJECT_PATH}}/ops/scripts/claude-stop-check.sh",
+            "timeout": 5
           }
         ]
       }

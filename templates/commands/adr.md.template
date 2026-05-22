@@ -1,0 +1,50 @@
+# Capture Architectural Decision
+
+Capture an architectural decision as a new ADR entry in `{{WIKI_PATH}}/maps/architectural-decisions.md`, then append a one-line summary to `{{WIKI_PATH}}/log.md`.
+
+## Steps
+
+1. Determine the next ADR number: read `{{WIKI_PATH}}/maps/architectural-decisions.md`, find the highest existing `## ADR NN -` heading, increment by 1. Use two-digit zero-padded format.
+
+2. If $ARGUMENTS is empty, ask the user for: decision title, context (problem + why now), the decision itself, the rejected alternative(s), and the trade-off. Otherwise, treat $ARGUMENTS as the decision title and ask only for the rest.
+
+3. Insert a new section into `{{WIKI_PATH}}/maps/architectural-decisions.md` immediately BEFORE the first `---` separator that is followed by a blank line (i.e. as the new most-recent ADR). Format must match existing entries exactly:
+
+```
+## ADR NN - <Decision Title>
+
+**Decision.** <one-paragraph decision, referencing related wiki entities as [[entity-name]]>
+
+**Why.** <bullet list of motivations>
+
+**Trade-off.** <one-paragraph honest trade-off acknowledgement>
+
+**Status.** <Live | Planned | In progress | Reverted YYYY-MM-DD>. <One line of current-state context.>
+
+---
+```
+
+4. Update the frontmatter's `updated:` field to today's date (YYYY-MM-DD).
+
+5. If the decision references entities not in the existing `links:` array of the frontmatter, add them.
+
+6. Append a single line to `{{WIKI_PATH}}/log.md`:
+
+```
+- YYYY-MM-DD adr: ADR NN - <Title> [[architectural-decisions]]
+```
+
+7. Commit the wiki change:
+
+```bash
+cd {{WIKI_PATH}}
+git add maps/architectural-decisions.md log.md
+git -c gpg.gpgsign=false commit -m "adr: ADR NN - <Title>"
+```
+
+## Hard rules
+
+- ADR numbers are sequential and never reused, even for reverted decisions.
+- If the same decision already exists (same title or near-duplicate trade-off), tell the user and stop; do NOT append a duplicate.
+- Cross-link with `[[basename]]` syntax to related entities.
+- Match the writing voice of the existing ADRs in the file. If the file has no entries yet, default to plain, direct prose. No corporate buzzwords. No em dashes.

@@ -1,0 +1,26 @@
+# Cron equivalents of the launchd scheduled jobs.
+# Install with `crontab -e` and paste the lines you want active.
+# Adjust paths to match where you put the scripts.
+#
+# Time format: m h dom mon dow  command
+#
+# Tip: make sure PATH contains /usr/local/bin / Python / your claude binary
+# location. cron's default PATH is minimal. Set PATH explicitly above the
+# job lines if a script needs more than /usr/bin:/bin.
+
+PATH=/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin
+
+# --- cert-expiry: daily 09:00 (TLS sweep, pure bash) ---
+0 9 * * *   {{PROJECT_PATH}}/ops/scripts/scheduled-cert-expiry.sh >> $HOME/.local/share/cert-expiry.out.log 2>&1
+
+# --- test-gaps: nightly 03:30 (Go test coverage) ---
+30 3 * * *  {{PROJECT_PATH}}/ops/scripts/scheduled-test-gaps.sh >> $HOME/.local/share/test-gaps.out.log 2>&1
+
+# --- claude-spend: daily 23:55 (token cost rollup, Python) ---
+55 23 * * * /usr/bin/env python3 {{PROJECT_PATH}}/ops/scripts/scheduled-claude-spend.py >> $HOME/.local/share/claude-spend.out.log 2>&1
+
+# --- security-audit: weekly Mon 03:00 (headless Claude, costs tokens) ---
+0 3 * * 1   {{PROJECT_PATH}}/ops/scripts/scheduled-security-audit.sh >> $HOME/.local/share/security-audit.out.log 2>&1
+
+# --- seo-drift: weekly Mon 04:00 (headless Claude, costs tokens) ---
+0 4 * * 1   {{PROJECT_PATH}}/ops/scripts/scheduled-seo-drift.sh >> $HOME/.local/share/seo-drift.out.log 2>&1

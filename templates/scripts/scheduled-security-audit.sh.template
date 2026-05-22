@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Weekly headless-Claude security audit. EXAMPLE template - you must edit
+# the PROMPT block below to match your stack.
+#
+# Reference example (Bright Interaction): calls the Dockyard MCP server's
+# `run_security_audit` + `get_security_posture` tools, diffs against a JSON
+# snapshot, and appends regressions to the wiki log.
+#
+# To adapt for your project:
+#   1. Replace the PROMPT body with your own audit instructions. Common shapes:
+#      - call an MCP server tool that scans your infra
+#      - run a security-review skill against your repo
+#      - shell out to your own scanner CLI and have Claude summarize
+#   2. Update SNAPSHOT to the file you want diffed week-over-week (or remove
+#      the snapshot logic if you only want a fresh report).
+#   3. Make sure {{WIKI_PATH}} is the wiki you want regressions logged into.
+#
+# Trigger via launchd (macOS) or cron (Linux). See docs/scheduled-jobs.md.
+#
+# Cost note: headless Claude runs cost real tokens. The recommended cadence
+# is weekly, not daily. See docs/scheduled-jobs.md "Cost note".
+set -uo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+WORKDIR="{{PROJECT_PATH}}"
+WIKI="{{WIKI_PATH}}"
+CLAUDE_BIN="/opt/homebrew/bin/claude"
+[ ! -x "$CLAUDE_BIN" ] && CLAUDE_BIN="$(command -v claude)"
+LOG="$HOME/Library/Logs/security-audit.log"
+[ "$(uname)" = "Linux" ] && LOG="$HOME/.local/share/security-audit.log"
+SNAPSHOT="$WORKDIR/ops/last-security-posture.json"
+
+mkdir -p "$(dirname "$LOG")"
+echo "===== $(date -Iseconds) security-audit run =====" >> "$LOG"
+
+cd "$WORKDIR"
+
+# === EDIT THIS PROMPT FOR YOUR STACK ===
+PROMPT='Weekly security posture audit (scheduled headless run, no human in the loop).
+
+Replace this body with the audit you actually want to run. Pattern:
+
+1. Call your audit tool (an MCP tool, a CLI, a Claude skill).
+2. Capture the result.
+3. Compare against the previous snapshot at '"$SNAPSHOT"' (read it; if it does not exist, treat all current findings as new).
+4. If anything regressed (score dropped, new high/critical finding, previously-fixed item back):
+   a. Append a dated entry to '"$WIKI"'/log.md describing what changed, one line per item.
+   b. In the wiki vault, run: cd '"$WIKI"' && git add -A && git -c gpg.gpgsign=false commit -m "sync: weekly security audit ($(date +%Y-%m-%d))"
+5. Whether or not there was a regression, overwrite '"$SNAPSHOT"' with the current state so next week diffs cleanly.
+6. Print a one-line stdout summary.
+
+Hard rules:
+- Do NOT push the wiki commit (assume no remote, or push explicitly if your wiki has one).
+- Do NOT modify any source.
+- If your audit tool is unreachable, print "audit: unreachable" and exit 0.
+
+Begin.'
+
+"$CLAUDE_BIN" -p "$PROMPT" --output-format text >> "$LOG" 2>&1
+EXIT_CODE=$?
+echo "  claude exit: $EXIT_CODE" >> "$LOG"
+
+exit 0
