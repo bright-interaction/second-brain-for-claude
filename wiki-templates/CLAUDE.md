@@ -20,11 +20,17 @@ Never read source code before reading the relevant entity page. The entity page 
 
 ## Page types
 
+The full standard is [`ORGANIZATION.md`](ORGANIZATION.md): the eight note types, their
+lifecycle, the frontmatter schema, and the linking/mapping rules. The everyday ones:
+
 - **entities/** - things that exist. One page per service, product, team, client, person.
 - **concepts/** - ideas you reason about. One page per "how X works" or "why we do Y".
-- **maps/** - synthesis pages that connect multiple entities.
+- **maps/** - synthesis pages that connect multiple entities (one per domain).
+- **decisions/** + **gotchas/** - institutional memory, **tier-0** (search surfaces them
+  first). Capture with `mesh_append_note`; use `**Do:** / **Don't:** / **Why:**`.
 
-See the starter repo's `docs/wiki-philosophy.md` for templates and conventions.
+Run `mesh structure` for the organization grade. See `docs/wiki-philosophy.md` for
+page templates.
 
 ## Style
 
